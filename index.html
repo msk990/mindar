@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, user-scalable=no"
     />
-    <title>MindAR Minimal Demo</title>
+    <title>Papageno WebAR</title>
 
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
@@ -18,22 +18,24 @@
       body {
         margin: 0;
         overflow: hidden;
+        font-family: sans-serif;
+      }
+
+      #startButton {
+        position: absolute;
+        z-index: 10;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 12px 20px;
+        font-size: 16px;
       }
     </style>
   </head>
 
   <body>
-    <button id="startButton" style="
-  position: absolute;
-  z-index: 10;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 12px 20px;
-  font-size: 16px;
-">
-  Start experience
-</button>
+    <!-- User gesture for audio -->
+    <button id="startButton">Start experience</button>
 
     <a-scene
       mindar-image="imageTargetSrc: ./targets/poster.mind;"
@@ -45,101 +47,132 @@
       <!-- Camera -->
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <!-- Anchor -->
-      <!-- <a-entity mindar-image-target="targetIndex: 0"> -->
-        <!-- Simple test box -->
-        <!-- <a-box
-          position="0 0.1 0"
-          depth="0.1"
-          height="0.1"
-          width="0.1"
-          color="red"
-        ></a-box>
-      </a-entity> -->
-        <!-- <a-entity id="posterAnchor" mindar-image-target="targetIndex: 0">
-  <a-entity
-    id="papageno"
-    gltf-model="./froggie.glb"
-    position="0 -0.3 0"
-    scale="0.4 0.4 0.4"
-    rotation="0 180 0"
-    visible="true"
-  ></a-entity> -->
-  <a-entity id="posterAnchor" mindar-image-target="targetIndex: 0">
-  <a-sphere
-    color="red"
-    radius="0.05"
-    position="0 0 0"
-  ></a-sphere>
-
-  <a-entity
-    id="papageno"
-    gltf-model="./froggie.glb"
-    position="0 0 0"
-    scale="1 1 1"
-    visible="true"
-  ></a-entity>
-</a-entity>
-</a-entity>
-
-
+      <!-- IMAGE ANCHOR -->
+      <a-entity id="posterAnchor" mindar-image-target="targetIndex: 0">
+        <!-- Papageno (goat) -->
+        <a-entity
+          id="papageno"
+          gltf-model="./froggie.glb"
+          position="0 -0.3 0"
+          scale="0.4 0.4 0.4"
+          rotation="0 180 0"
+          visible="false"
+          look-at="[camera]"
+        ></a-entity>
+      </a-entity>
     </a-scene>
 
-<script>
-  const audio = new Audio("./papageno.mp3");
-  audio.loop = false;
+    <script>
+      /*********************************************************
+       * AUDIO = MASTER CLOCK
+       *********************************************************/
+      const audio = new Audio("./papageno.mp3");
+      audio.loop = false;
 
-  const papageno = document.querySelector("#papageno");
+      /*********************************************************
+       * STATE
+       *********************************************************/
+      let audioStarted = false;
+      let targetVisible = false;
+      let showStarted = false;
 
-  document.getElementById("startButton").onclick = () => {
-    audio.play();
-    document.getElementById("startButton").style.display = "none";
+      const papageno = document.querySelector("#papageno");
+      const anchor = document.querySelector("#posterAnchor");
+      const startButton = document.getElementById("startButton");
 
-    // Papageno sways while singing
-    setTimeout(() => {
-      papageno.setAttribute("animation__sway", {
-        property: "rotation",
-        from: "0 175 0",
-        to: "0 185 0",
-        dir: "alternate",
-        dur: 800,
-        loop: true,
-        easing: "easeInOutSine"
+      /*********************************************************
+       * TIMELINE (seconds from music start)
+       *********************************************************/
+      const TIMELINE = {
+        papagenoEnter: 0.5,
+        papagenoSing: 2.0,
+        end: 34.0
+      };
+
+      /*********************************************************
+       * USER CLICK → UNLOCK AUDIO
+       *********************************************************/
+      startButton.onclick = () => {
+        audio.play();
+        audioStarted = true;
+        startButton.style.display = "none";
+        maybeStartShow();
+      };
+
+      /*********************************************************
+       * IMAGE TARGET EVENTS
+       *********************************************************/
+      anchor.addEventListener("targetFound", () => {
+        console.log("✅ TARGET FOUND");
+        targetVisible = true;
+        maybeStartShow();
       });
-    }, 3000);
-  };
-</script>
 
-
-<!-- <script>
-  const papag = document.querySelector("#papageno");
-
-  document
-    .querySelector("#posterAnchor")
-    .addEventListener("targetFound", () => {
-      papageno.setAttribute("visible", true);
-
-      papageno.setAttribute("animation__rise", {
-        property: "position",
-        from: "0 -0.3 0",
-        to: "0 0.05 0",
-        dur: 4000,
-        easing: "easeOutCubic"
+      anchor.addEventListener("targetLost", () => {
+        console.log("❌ TARGET LOST");
+        targetVisible = false;
       });
 
-      papag.setAttribute("animation__scale", {
-        property: "scale",
-        from: "0.1 0.1 0.1",
-        to: "0.4 0.4 0.4",
-        dur: 4000,
-        easing: "easeOutBack"
-      });
-    });
-</script> -->
+      /*********************************************************
+       * START SHOW WHEN READY
+       *********************************************************/
+      function maybeStartShow() {
+        if (audioStarted && targetVisible && !showStarted) {
+          showStarted = true;
+          startTimeline();
+        }
+      }
 
+      /*********************************************************
+       * TIMELINE LOOP (audio-driven)
+       *********************************************************/
+      function startTimeline() {
+        const startTime = audio.currentTime;
 
+        function tick() {
+          const t = audio.currentTime - startTime;
 
+          // Papageno appears
+          if (t > TIMELINE.papagenoEnter && !papageno.getAttribute("visible")) {
+            papageno.setAttribute("visible", true);
 
+            papageno.setAttribute("animation__rise", {
+              property: "position",
+              from: "0 -0.3 0",
+              to: "0 0.05 0",
+              dur: 2000,
+              easing: "easeOutCubic"
+            });
 
+            papageno.setAttribute("animation__scale", {
+              property: "scale",
+              from: "0.1 0.1 0.1",
+              to: "0.4 0.4 0.4",
+              dur: 2000,
+              easing: "easeOutBack"
+            });
+          }
+
+          // Singing sway
+          if (t > TIMELINE.papagenoSing) {
+            papageno.setAttribute("animation__sway", {
+              property: "rotation",
+              from: "0 175 0",
+              to: "0 185 0",
+              dir: "alternate",
+              dur: 800,
+              loop: true,
+              easing: "easeInOutSine"
+            });
+          }
+
+          if (t < TIMELINE.end) {
+            requestAnimationFrame(tick);
+          }
+        }
+
+        requestAnimationFrame(tick);
+      }
+    </script>
   </body>
 </html>
