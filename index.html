@@ -92,26 +92,32 @@
       /*********************************************************
        * USER CLICK → UNLOCK AUDIO
        *********************************************************/
-      startButton.onclick = () => {
-        audio.play();
-        audioStarted = true;
-        startButton.style.display = "none";
-        maybeStartShow();
-      };
+  let musicStartTime = null;
+
+startButton.onclick = async () => {
+  await audio.play();
+  musicStartTime = audio.currentTime;
+  audioStarted = true;
+
+  startButton.style.display = "none";
+  tryStartShow();
+};
+
+
 
       /*********************************************************
        * IMAGE TARGET EVENTS
        *********************************************************/
-      anchor.addEventListener("targetFound", () => {
-        console.log("✅ TARGET FOUND");
-        targetVisible = true;
-        maybeStartShow();
-      });
+anchor.addEventListener("targetFound", () => {
+  targetVisible = true;
+  tryStartShow();
+});
 
-      anchor.addEventListener("targetLost", () => {
-        console.log("❌ TARGET LOST");
-        targetVisible = false;
-      });
+
+anchor.addEventListener("targetLost", () => {
+  console.log("❌ TARGET LOST");
+  targetVisible = false;
+});
 
       /*********************************************************
        * START SHOW WHEN READY
@@ -123,56 +129,77 @@
         }
       }
 
+
+      function tryStartShow() {
+  if (
+    audioStarted &&
+    targetVisible &&
+    !showStarted &&
+    musicStartTime !== null
+  ) {
+    showStarted = true;
+    startTimeline();
+  }
+}
+
       /*********************************************************
        * TIMELINE LOOP (audio-driven)
        *********************************************************/
       function startTimeline() {
-        const startTime = audio.currentTime;
+  const t0 = musicStartTime;
 
-        function tick() {
-          const t = audio.currentTime - startTime;
+  let appeared = false;
+  let swayStarted = false;
 
-          // Papageno appears
-          if (t > TIMELINE.papagenoEnter && !papageno.getAttribute("visible")) {
-            papageno.setAttribute("visible", true);
+  function tick() {
+    const t = audio.currentTime - t0;
 
-            papageno.setAttribute("animation__rise", {
-              property: "position",
-              from: "0 -0.3 0",
-              to: "0 0.05 0",
-              dur: 2000,
-              easing: "easeOutCubic"
-            });
+    // Guard: if music stopped, abort visuals
+    if (audio.paused) return;
 
-            papageno.setAttribute("animation__scale", {
-              property: "scale",
-              from: "0.1 0.1 0.1",
-              to: "0.4 0.4 0.4",
-              dur: 2000,
-              easing: "easeOutBack"
-            });
-          }
+    // Papageno appears AFTER music
+    if (t > 2.0 && !appeared) {
+      appeared = true;
+      papageno.setAttribute("visible", true);
 
-          // Singing sway
-          if (t > TIMELINE.papagenoSing) {
-            papageno.setAttribute("animation__sway", {
-              property: "rotation",
-              from: "0 175 0",
-              to: "0 185 0",
-              dir: "alternate",
-              dur: 800,
-              loop: true,
-              easing: "easeInOutSine"
-            });
-          }
+      papageno.setAttribute("animation__rise", {
+        property: "position",
+        from: "0 -0.15 0.05",
+        to: "0 0.02 0.05",
+        dur: 2000,
+        easing: "easeOutCubic"
+      });
 
-          if (t < TIMELINE.end) {
-            requestAnimationFrame(tick);
-          }
-        }
+      papageno.setAttribute("animation__scale", {
+        property: "scale",
+        from: "0.05 0.05 0.05",
+        to: "0.12 0.12 0.12",
+        dur: 2000,
+        easing: "easeOutBack"
+      });
+    }
 
-        requestAnimationFrame(tick);
-      }
+    // Sway starts WITH music
+    if (t > 2.0 && appeared && !swayStarted) {
+      swayStarted = true;
+
+      papageno.setAttribute("animation__sway", {
+        property: "rotation",
+        from: "0 175 0",
+        to: "0 185 0",
+        dir: "alternate",
+        dur: 900,
+        loop: true,
+        easing: "easeInOutSine"
+      });
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  requestAnimationFrame(tick);
+}
+
     </script>
   </body>
 </html>
