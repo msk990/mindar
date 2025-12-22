@@ -56,56 +56,26 @@
           color="red"
         ></a-box>
       </a-entity> -->
-            <a-entity
-                id="papageno"
-                gltf-model="./froggie.glb"
-                position="0 -0.3 0"
-                scale="0.4 0.4 0.4"
-                rotation="0 180 0"
-                visible="false"
-                >
-        </a-entity>
+        <a-entity id="posterAnchor" mindar-image-target="targetIndex: 0">
+  <a-entity
+    id="papageno"
+    gltf-model="./froggie.glb"
+    position="0 -0.3 0"
+    scale="0.4 0.4 0.4"
+    rotation="0 180 0"
+    visible="false"
+  ></a-entity>
+</a-entity>
+
 
     </a-scene>
-
 
 <script>
   const audio = new Audio("./papageno.mp3");
   audio.loop = false;
 
-  document.getElementById("startButton").onclick = () => {
-    audio.play();
-    document.getElementById("startButton").style.display = "none";
-  };
-</script>
-<script>
   const papageno = document.querySelector("#papageno");
 
-  // Wait until MindAR detects the image
-  document
-    .querySelector("a-scene")
-    .addEventListener("targetFound", () => {
-      papageno.setAttribute("visible", true);
-
-      papageno.setAttribute("animation__rise", {
-        property: "position",
-        from: "0 -0.3 0",
-        to: "0 0.05 0",
-        dur: 4000,
-        easing: "easeOutCubic"
-      });
-
-      papageno.setAttribute("animation__scale", {
-        property: "scale",
-        from: "0.1 0.1 0.1",
-        to: "0.4 0.4 0.4",
-        dur: 4000,
-        easing: "easeOutBack"
-      });
-    });
-</script>
-
-<script>
   document.getElementById("startButton").onclick = () => {
     audio.play();
     document.getElementById("startButton").style.display = "none";
@@ -121,9 +91,39 @@
         loop: true,
         easing: "easeInOutSine"
       });
-    }, 3000); // after intro
+    }, 3000);
   };
 </script>
+
+
+<script>
+  const papag = document.querySelector("#papageno");
+
+  document
+    .querySelector("#posterAnchor")
+    .addEventListener("targetFound", () => {
+      papageno.setAttribute("visible", true);
+
+      papageno.setAttribute("animation__rise", {
+        property: "position",
+        from: "0 -0.3 0",
+        to: "0 0.05 0",
+        dur: 4000,
+        easing: "easeOutCubic"
+      });
+
+      papag.setAttribute("animation__scale", {
+        property: "scale",
+        from: "0.1 0.1 0.1",
+        to: "0.4 0.4 0.4",
+        dur: 4000,
+        easing: "easeOutBack"
+      });
+    });
+</script>
+
+
+
 
 
   </body>
