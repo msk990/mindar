@@ -23,6 +23,18 @@
   </head>
 
   <body>
+    <button id="startButton" style="
+  position: absolute;
+  z-index: 10;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 20px;
+  font-size: 16px;
+">
+  Start experience
+</button>
+
     <a-scene
       mindar-image="imageTargetSrc: ./targets/poster.mind;"
       color-space="sRGB"
@@ -34,16 +46,85 @@
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <!-- Anchor -->
-      <a-entity mindar-image-target="targetIndex: 0">
+      <!-- <a-entity mindar-image-target="targetIndex: 0"> -->
         <!-- Simple test box -->
-        <a-box
+        <!-- <a-box
           position="0 0.1 0"
           depth="0.1"
           height="0.1"
           width="0.1"
           color="red"
         ></a-box>
-      </a-entity>
+      </a-entity> -->
+            <a-entity
+                id="papageno"
+                gltf-model="./froggie.glb"
+                position="0 -0.3 0"
+                scale="0.4 0.4 0.4"
+                rotation="0 180 0"
+                visible="false"
+                >
+        </a-entity>
+
     </a-scene>
+
+
+<script>
+  const audio = new Audio("./papageno.mp3");
+  audio.loop = false;
+
+  document.getElementById("startButton").onclick = () => {
+    audio.play();
+    document.getElementById("startButton").style.display = "none";
+  };
+</script>
+<script>
+  const papageno = document.querySelector("#papageno");
+
+  // Wait until MindAR detects the image
+  document
+    .querySelector("a-scene")
+    .addEventListener("targetFound", () => {
+      papageno.setAttribute("visible", true);
+
+      papageno.setAttribute("animation__rise", {
+        property: "position",
+        from: "0 -0.3 0",
+        to: "0 0.05 0",
+        dur: 4000,
+        easing: "easeOutCubic"
+      });
+
+      papageno.setAttribute("animation__scale", {
+        property: "scale",
+        from: "0.1 0.1 0.1",
+        to: "0.4 0.4 0.4",
+        dur: 4000,
+        easing: "easeOutBack"
+      });
+    });
+</script>
+
+<script>
+  document.getElementById("startButton").onclick = () => {
+    audio.play();
+    document.getElementById("startButton").style.display = "none";
+
+    // Papageno sways while singing
+    setTimeout(() => {
+      papageno.setAttribute("animation__sway", {
+        property: "rotation",
+        from: "0 175 0",
+        to: "0 185 0",
+        dir: "alternate",
+        dur: 800,
+        loop: true,
+        easing: "easeInOutSine"
+      });
+    }, 3000); // after intro
+  };
+</script>
+
+
   </body>
 </html>
