@@ -50,15 +50,25 @@
       <!-- IMAGE ANCHOR -->
       <a-entity id="posterAnchor" mindar-image-target="targetIndex: 0">
         <!-- Papageno (goat) -->
-        <a-entity
-          id="papageno"
-          gltf-model="./froggie.glb"
-          position="0 -0.3 0"
-          scale="0.4 0.4 0.4"
-          rotation="0 180 0"
-          visible="false"
-          look-at="[camera]"
-        ></a-entity>
+      <a-entity id="posterAnchor" mindar-image-target="targetIndex: 0">
+
+  <!-- Facing wrapper -->
+  <a-entity
+    id="papagenoFacing"
+    rotation="0 180 0"
+    look-at="[camera]"
+  >
+    <a-entity
+      id="papageno"
+      gltf-model="./froggie.glb"
+      position="0 -0.15 0.05"
+      scale="0.4 0.4 0.4"
+      visible="false"
+    ></a-entity>
+  </a-entity>
+
+</a-entity>
+
       </a-entity>
     </a-scene>
 
