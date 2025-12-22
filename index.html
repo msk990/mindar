@@ -94,6 +94,18 @@
       console.error("❌ Papageno or anchor not found");
       return;
     }
+papageno.addEventListener("model-loaded", () => {
+  console.log("🐸 Frog model loaded");
+
+  const obj = papageno.getObject3D("mesh");
+  if (!obj) {
+    console.error("❌ No mesh found");
+    return;
+  }
+
+  // Rotate the ACTUAL geometry
+  obj.rotation.y += Math.PI; // 180°
+});
 
     /*********************************************************
      * USER CLICK → UNLOCK AUDIO
