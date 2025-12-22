@@ -63,144 +63,140 @@
 
     </a-scene>
 
-    <script>
-      /*********************************************************
-       * AUDIO = MASTER CLOCK
-       *********************************************************/
-      const audio = new Audio("./papageno.mp3");
-      audio.loop = false;
+   <script>
+  /*********************************************************
+   * AUDIO = MASTER CLOCK
+   *********************************************************/
+  const audio = new Audio("./papageno.mp3");
+  audio.loop = false;
 
-      /*********************************************************
-       * STATE
-       *********************************************************/
-      let audioStarted = false;
-      let targetVisible = false;
-      let showStarted = false;
-
-      const papageno = document.querySelector("#papageno");
-      const anchor = document.querySelector("#posterAnchor");
-      const startButton = document.getElementById("startButton");
-
-      /*********************************************************
-       * TIMELINE (seconds from music start)
-       *********************************************************/
-      const TIMELINE = {
-        papagenoEnter: 0.5,
-        papagenoSing: 2.0,
-        end: 34.0
-      };
-
-      /*********************************************************
-       * USER CLICK → UNLOCK AUDIO
-       *********************************************************/
+  let audioStarted = false;
+  let targetVisible = false;
+  let showStarted = false;
   let musicStartTime = null;
 
-startButton.onclick = async () => {
-  await audio.play();
-  musicStartTime = audio.currentTime;
-  audioStarted = true;
+  const TIMELINE = {
+    papagenoEnter: 2.0,
+    papagenoSing: 2.0,
+    end: 34.0
+  };
 
-  startButton.style.display = "none";
-  tryStartShow();
-};
+  const startButton = document.getElementById("startButton");
+  const scene = document.querySelector("a-scene");
 
+  scene.addEventListener("loaded", () => {
+    console.log("🎬 Scene loaded");
 
+    const papageno = document.querySelector("#papageno");
+    const anchor = document.querySelector("#posterAnchor");
 
-      /*********************************************************
-       * IMAGE TARGET EVENTS
-       *********************************************************/
-anchor.addEventListener("targetFound", () => {
-  targetVisible = true;
-  tryStartShow();
-});
+    if (!papageno || !anchor) {
+      console.error("❌ Papageno or anchor not found");
+      return;
+    }
 
+    /*********************************************************
+     * USER CLICK → UNLOCK AUDIO
+     *********************************************************/
+    startButton.onclick = async () => {
+      await audio.play();
+      audioStarted = true;
+      musicStartTime = audio.currentTime;
 
-anchor.addEventListener("targetLost", () => {
-  console.log("❌ TARGET LOST");
-  targetVisible = false;
-});
+      startButton.style.display = "none";
+      tryStartShow();
+    };
 
-      /*********************************************************
-       * START SHOW WHEN READY
-       *********************************************************/
-      function maybeStartShow() {
-        if (audioStarted && targetVisible && !showStarted) {
-          showStarted = true;
-          startTimeline();
+    /*********************************************************
+     * IMAGE TARGET EVENTS
+     *********************************************************/
+    anchor.addEventListener("targetFound", () => {
+      console.log("✅ TARGET FOUND");
+      targetVisible = true;
+      tryStartShow();
+    });
+
+    anchor.addEventListener("targetLost", () => {
+      console.log("❌ TARGET LOST");
+      targetVisible = false;
+    });
+
+    /*********************************************************
+     * START SHOW WHEN READY
+     *********************************************************/
+    function tryStartShow() {
+      if (
+        audioStarted &&
+        targetVisible &&
+        !showStarted &&
+        musicStartTime !== null
+      ) {
+        showStarted = true;
+        startTimeline();
+      }
+    }
+
+    /*********************************************************
+     * TIMELINE LOOP (audio-driven)
+     *********************************************************/
+    function startTimeline() {
+      const t0 = musicStartTime;
+      let appeared = false;
+      let swayStarted = false;
+
+      function tick() {
+        if (audio.paused) return;
+
+        const t = audio.currentTime - t0;
+
+        // Papageno appears AFTER music intro
+        if (t > TIMELINE.papagenoEnter && !appeared) {
+          appeared = true;
+          console.log("🐐 Papageno appears");
+
+          papageno.setAttribute("visible", true);
+
+          papageno.setAttribute("animation__rise", {
+            property: "position",
+            from: "0 -0.15 0.05",
+            to: "0 0.02 0.05",
+            dur: 2000,
+            easing: "easeOutCubic"
+          });
+
+          papageno.setAttribute("animation__scale", {
+            property: "scale",
+            from: "0.05 0.05 0.05",
+            to: "0.12 0.12 0.12",
+            dur: 2000,
+            easing: "easeOutBack"
+          });
+        }
+
+        // Singing sway
+        if (t > TIMELINE.papagenoSing && appeared && !swayStarted) {
+          swayStarted = true;
+
+          papageno.setAttribute("animation__sway", {
+            property: "rotation",
+            from: "0 175 0",
+            to: "0 185 0",
+            dir: "alternate",
+            dur: 900,
+            loop: true,
+            easing: "easeInOutSine"
+          });
+        }
+
+        if (t < TIMELINE.end) {
+          requestAnimationFrame(tick);
         }
       }
 
-
-      function tryStartShow() {
-  if (
-    audioStarted &&
-    targetVisible &&
-    !showStarted &&
-    musicStartTime !== null
-  ) {
-    showStarted = true;
-    startTimeline();
-  }
-}
-
-      /*********************************************************
-       * TIMELINE LOOP (audio-driven)
-       *********************************************************/
-      function startTimeline() {
-  const t0 = musicStartTime;
-
-  let appeared = false;
-  let swayStarted = false;
-
-  function tick() {
-    const t = audio.currentTime - t0;
-
-    // Guard: if music stopped, abort visuals
-    if (audio.paused) return;
-
-    // Papageno appears AFTER music
-    if (t > 2.0 && !appeared) {
-      appeared = true;
-      papageno.setAttribute("visible", true);
-
-      papageno.setAttribute("animation__rise", {
-        property: "position",
-        from: "0 -0.15 0.05",
-        to: "0 0.02 0.05",
-        dur: 2000,
-        easing: "easeOutCubic"
-      });
-
-      papageno.setAttribute("animation__scale", {
-        property: "scale",
-        from: "0.05 0.05 0.05",
-        to: "0.12 0.12 0.12",
-        dur: 2000,
-        easing: "easeOutBack"
-      });
+      requestAnimationFrame(tick);
     }
+  });
+</script>
 
-    // Sway starts WITH music
-    if (t > 2.0 && appeared && !swayStarted) {
-      swayStarted = true;
-
-      papageno.setAttribute("animation__sway", {
-        property: "rotation",
-        from: "0 175 0",
-        to: "0 185 0",
-        dir: "alternate",
-        dur: 900,
-        loop: true,
-        easing: "easeInOutSine"
-      });
-    }
-
-    requestAnimationFrame(tick);
-  }
-
-  requestAnimationFrame(tick);
-}
-
-    </script>
   </body>
 </html>
