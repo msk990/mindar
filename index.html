@@ -31,11 +31,57 @@
         font-size: 16px;
       }
     </style>
+    <script>
+/*********************************************************
+ * WEB AR CAPABILITY CHECK
+ *********************************************************/
+function isWebARSupported() {
+  const hasCamera =
+    !!navigator.mediaDevices &&
+    !!navigator.mediaDevices.getUserMedia;
+
+  const hasWebGL = (() => {
+    try {
+      const canvas = document.createElement("canvas");
+      return !!(
+        window.WebGLRenderingContext &&
+        (canvas.getContext("webgl") ||
+         canvas.getContext("experimental-webgl"))
+      );
+    } catch (e) {
+      return false;
+    }
+  })();
+
+  return hasCamera && hasWebGL;
+}
+
+function isBadBrowser() {
+  const ua = navigator.userAgent;
+
+  const isiOS = /iPad|iPhone|iPod/.test(ua);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+
+  // iOS but not Safari → WebAR blocked by Apple
+  if (isiOS && !isSafari) return true;
+
+  // In-app browsers (Instagram, Facebook, etc.)
+  if (/FBAN|FBAV|Instagram/.test(ua)) return true;
+
+  return false;
+}
+
+// Redirect early if unsupported
+if (!isWebARSupported() || isBadBrowser()) {
+  window.location.replace("./unsupported.html");
+}
+</script>
+
   </head>
 
   <body>
     <!-- User gesture for audio -->
-    <button id="startButton">Start hehe experience</button>
+    <button id="startButton">Start haha experience</button>
 
     <a-scene
       mindar-image="imageTargetSrc: ./targets/poster.mind;"
@@ -48,22 +94,24 @@
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <!-- IMAGE ANCHOR -->
-<a-entity id="posterAnchor" mindar-image-target="targetIndex: 0">
-
+<a-entity
+  id="posterAnchor"
+  mindar-image-target="targetIndex: 0"
+>
   <a-entity
     id="papageno"
-    gltf-model="./animated.glb"
+    gltf-model="./froggie.glb"
     position="0 -0.15 0.05"
-    scale="0.05 0.05 0.05"
+    scale="1 1 1"
     rotation="-90 180 0"
     visible="false"
   ></a-entity>
-
 </a-entity>
 
-    </a-scene>
 
    <script>
+
+    
   /*********************************************************
    * AUDIO = MASTER CLOCK
    *********************************************************/
@@ -89,6 +137,10 @@
 
     const papageno = document.querySelector("#papageno");
     const anchor = document.querySelector("#posterAnchor");
+
+    let posterMode = "unknown";
+
+
 
     if (!papageno || !anchor) {
       console.error("❌ Papageno or anchor not found");
@@ -207,6 +259,39 @@ papageno.addEventListener("model-loaded", () => {
 
       requestAnimationFrame(tick);
     }
+
+    // ---------------------------------------------
+// 🎭 STAGING PRESETS
+// ---------------------------------------------
+function stageForWall() {
+  console.log("🧱 Wall staging");
+
+  papageno.setAttribute("position", "0 -0.15 0.05");
+  papageno.setAttribute("scale", "1 1 1");
+
+  // Reset any extra tilts
+  papageno.object3D.rotation.x = 0;
+}
+
+function stageForTable() {
+  console.log("🪵 Table staging");
+
+  papageno.setAttribute("position", "0 0.02 0.05");
+  papageno.setAttribute("scale", "1 1 1");
+
+  // Make the animal appear upright even though poster is flat
+  papageno.object3D.rotation.x = -Math.PI / 2;
+}
+
+function stageNeutral() {
+  console.log("🌀 Neutral staging");
+
+  papageno.setAttribute("position", "0 -0.05 0.05");
+  papageno.setAttribute("scale", "1 1 1");
+
+  papageno.object3D.rotation.x = 0;
+}
+
   });
 </script>
 
